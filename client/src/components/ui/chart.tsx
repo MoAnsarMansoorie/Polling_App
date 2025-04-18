@@ -1,7 +1,8 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
+import styled from 'styled-components'
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -99,6 +100,22 @@ ${colorConfig
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
+
+const ChartIndicator = styled.div<{ $indicator: string; $color: string; $nestLabel?: boolean }>`
+  width: ${props => props.$indicator === 'dot' ? '0.625rem' : '0.25rem'};
+  height: ${props => props.$indicator === 'dot' ? '0.625rem' : 'auto'};
+  border-radius: 2px;
+  background-color: ${props => props.$color};
+  border: ${props => props.$indicator === 'dashed' ? '1.5px dashed' : 'none'};
+  margin: ${props => props.$nestLabel && props.$indicator === 'dashed' ? '0.125rem 0' : '0'};
+`;
+
+const ChartValue = styled.span`
+  font-family: ui-monospace, monospace;
+  font-weight: 500;
+  font-feature-settings: "tnum";
+  tab-size: 4;
+`;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
@@ -204,23 +221,10 @@ const ChartTooltipContent = React.forwardRef<
                       <itemConfig.icon />
                     ) : (
                       !hideIndicator && (
-                        <div
-                          className={cn(
-                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
-                            {
-                              "h-2.5 w-2.5": indicator === "dot",
-                              "w-1": indicator === "line",
-                              "w-0 border-[1.5px] border-dashed bg-transparent":
-                                indicator === "dashed",
-                              "my-0.5": nestLabel && indicator === "dashed",
-                            }
-                          )}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
+                        <ChartIndicator 
+                          $indicator={indicator}
+                          $color={indicatorColor}
+                          $nestLabel={nestLabel}
                         />
                       )
                     )}
@@ -237,9 +241,9 @@ const ChartTooltipContent = React.forwardRef<
                         </span>
                       </div>
                       {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground">
+                        <ChartValue>
                           {item.value.toLocaleString()}
-                        </span>
+                        </ChartValue>
                       )}
                     </div>
                   </>
