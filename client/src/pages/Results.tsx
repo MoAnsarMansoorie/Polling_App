@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { api } from '@/lib/api';
-import { Poll } from '@/types/poll';
+import { api } from '../lib/api';
+import { Poll } from '../types/poll';
 
 export default function PollResults() {
   const { pollId } = useParams();
