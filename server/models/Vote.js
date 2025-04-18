@@ -11,14 +11,16 @@ const voteSchema = new mongoose.Schema({
     required: true
   },
   voterId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    default: () => new mongoose.Types.ObjectId()
+    type: String,
+    required: true
   },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+// Create a compound index to ensure one vote per poll per voter
+voteSchema.index({ pollId: 1, voterId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Vote', voteSchema);

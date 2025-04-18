@@ -5,40 +5,58 @@ import { Input } from "../components/ui/input";
 import { Card, CardHeader, CardContent } from "../components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '../lib/api';
-import { Poll } from '@/types/poll';
 import EditPoll from './Editpoll';
 
-export default function AdminDashboard() {
+interface Option {
+  _id: string;
+  text: string;
+  votes: number;
+}
+
+interface Poll {
+  _id: string;
+  question: string;
+  options: Option[];
+}
+
+export default function Dashboard() {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [newPoll, setNewPoll] = useState({
     question: '',
     options: ['', '', '', '']
   });
   const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/admin');
+      return;
+    }
     loadPolls();
-  }, []);
+  }, [navigate]);
 
   const loadPolls = async () => {
     try {
       const data = await api.getPolls();
       setPolls(data);
     } catch (error) {
-      console.error('Error loading polls:', error);
+      setError('Failed to load polls');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPoll.question.trim()) {
-      alert('Please enter a question');
+      setError('Please enter a question');
       return;
     }
     const validOptions = newPoll.options.filter(opt => opt.trim() !== '');
     if (validOptions.length < 2) {
-      alert('Please enter at least 2 options');
+      setError('Please enter at least 2 options');
       return;
     }
     try {
@@ -47,9 +65,10 @@ export default function AdminDashboard() {
         options: validOptions
       });
       setNewPoll({ question: '', options: ['', '', '', ''] });
+      setError('');
       loadPolls();
     } catch (error) {
-      console.error('Error creating poll:', error);
+      setError('Failed to create poll');
     }
   };
 
@@ -59,7 +78,7 @@ export default function AdminDashboard() {
       await api.deletePoll(id);
       loadPolls();
     } catch (error) {
-      console.error('Error deleting poll:', error);
+      setError('Failed to delete poll');
     }
   };
 
@@ -67,11 +86,11 @@ export default function AdminDashboard() {
     try {
       await api.updatePoll(updatedPoll._id, {
         question: updatedPoll.question,
-        options: updatedPoll.options
+        options: updatedPoll.options.map(opt => opt.text)
       });
       loadPolls();
     } catch (error) {
-      console.error('Error updating poll:', error);
+      setError('Failed to update poll');
     }
   };
 
@@ -79,11 +98,28 @@ export default function AdminDashboard() {
     setSelectedPoll(selectedPoll?._id === poll._id ? null : poll);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-4xl font-bold text-center mb-8">Poll Administration</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Poll Administration</h1>
+        <Button variant="outline" onClick={handleLogout}>
+          Logout
+        </Button>
+      </div>
       
-      <Card className="mb-8 shadow-lg hover:shadow-xl transition-shadow">
+      {error && (
+        <div className="bg-red-100 text-red-600 p-3 rounded-md text-sm mb-4">
+          {error}
+        </div>
+      )}
+      
+      <Card className="mb-8">
         <CardHeader>
           <h2 className="text-2xl font-semibold text-center">Create New Poll</h2>
         </CardHeader>
@@ -128,11 +164,22 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6">
+      <div className="space-y-6">
         {polls.map((poll) => (
           <Card key={poll._id} className="shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
-              <h3 className="text-2xl font-semibold mb-4">{poll.question}</h3>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-2xl font-semibold">{poll.question}</h3>
+                <div className="flex space-x-2">
+                  <EditPoll poll={poll} onUpdate={handleUpdate} />
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => handleDelete(poll._id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
               
               {selectedPoll?._id === poll._id ? (
                 <div className="mb-4 h-[300px] bg-gray-50 rounded-lg p-4">
@@ -161,21 +208,12 @@ export default function AdminDashboard() {
                 </div>
               )}
               
-              <div className="flex justify-center gap-3 mt-6">
-                <EditPoll poll={poll} onUpdate={handleUpdate} />
+              <div className="flex justify-end space-x-2">
                 <Button 
                   variant="outline"
                   onClick={() => handleViewChart(poll)}
-                  className="min-w-[120px]"
                 >
                   {selectedPoll?._id === poll._id ? 'Hide Chart' : 'View Chart'}
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => handleDelete(poll._id)}
-                  className="min-w-[100px]"
-                >
-                  Delete
                 </Button>
               </div>
             </CardContent>

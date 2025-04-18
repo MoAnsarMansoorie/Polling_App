@@ -1,67 +1,109 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import axios from 'axios';
+
+const baseURL = 'http://localhost:5000/api';
+
+const axiosInstance = axios.create({
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests if available
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Add response interceptor for error handling
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth data and redirect to login on unauthorized
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const api = {
-  // Get all polls
-  getPolls: async () => {
-    const response = await fetch(`${API_BASE_URL}/polls`);
-    return response.json();
-  },
-
-  // Create new poll
-  createPoll: async (data: { question: string; options: string[] }) => {
-    const response = await fetch(`${API_BASE_URL}/polls`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  },
-
-  // Get poll by ID
-  getPoll: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/polls/${id}`);
-    return response.json();
-  },
-
-  // Update poll
-  updatePoll: async (id: string, data: { question: string; options: any[] }) => {
-    const response = await fetch(`${API_BASE_URL}/polls/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  },
-
-  // Delete poll
-  deletePoll: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/polls/${id}`, {
-      method: 'DELETE',
-    });
-    return response.json();
-  },
-
-  // Vote on poll
-//   votePoll: async (pollId: string, optionId: string) => {
-//     const response = await fetch(`${API_BASE_URL}/polls/${pollId}/vote/${optionId}`, {
-//       method: 'POST',
-//     });
-//     return response.json();
-//   },
-
-votePoll: async (pollId: string, optionId: string) => {
-    const response = await fetch(`${API_BASE_URL}/polls/${pollId}/vote/${optionId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await response.json();
-    if (data.voterId) {
-      localStorage.setItem(`vote_${pollId}`, data.voterId);
+  // Auth (Admin only)
+  login: async (credentials: { email: string; password: string }) => {
+    try {
+      const response = await axiosInstance.post('/auth/login', credentials);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Login failed');
     }
-    return data;
   },
-  
+
+  // Polls (Public access)
+  getPolls: async () => {
+    try {
+      const response = await axiosInstance.get('/polls');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching polls:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch polls');
+    }
+  },
+
+  getPoll: async (id: string) => {
+    try {
+      const response = await axiosInstance.get(`/polls/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch poll');
+    }
+  },
+
+  // Voting (Public access)
+  votePoll: async (pollId: string, optionId: string, voterId?: string) => {
+    try {
+      const response = await axiosInstance.post(`/polls/${pollId}/vote/${optionId}`, {
+        voterId
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to vote');
+    }
+  },
+
   hasVoted: (pollId: string) => {
     return !!localStorage.getItem(`vote_${pollId}`);
+  },
+
+  // Admin only operations
+  createPoll: async (pollData: { question: string; options: string[] }) => {
+    try {
+      const response = await axiosInstance.post('/admin/polls', pollData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to create poll');
+    }
+  },
+
+  updatePoll: async (id: string, pollData: { question: string; options: string[] }) => {
+    try {
+      const response = await axiosInstance.put(`/admin/polls/${id}`, pollData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to update poll');
+    }
+  },
+
+  deletePoll: async (id: string) => {
+    try {
+      const response = await axiosInstance.delete(`/admin/polls/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to delete poll');
+    }
   }
 };

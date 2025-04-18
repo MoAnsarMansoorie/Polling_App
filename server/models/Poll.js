@@ -17,10 +17,20 @@ const pollSchema = new mongoose.Schema({
     required: true
   },
   options: [optionSchema],
+  totalVotes: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
+});
+
+// Add a pre-save middleware to calculate total votes
+pollSchema.pre('save', function(next) {
+  this.totalVotes = this.options.reduce((sum, option) => sum + option.votes, 0);
+  next();
 });
 
 module.exports = mongoose.model('Poll', pollSchema);
