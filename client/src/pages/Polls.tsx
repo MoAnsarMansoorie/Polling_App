@@ -19,6 +19,7 @@ const Polls = () => {
         const data = await api.getPolls();
         setPolls(data);
       } catch (err) {
+        console.log(err)
         setError('Failed to load polls');
       } finally {
         setLoading(false);

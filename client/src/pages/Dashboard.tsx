@@ -17,6 +17,8 @@ interface Poll {
   _id: string;
   question: string;
   options: Option[];
+  totalVotes: number;
+  createdAt: string;
 }
 
 export default function Dashboard() {
@@ -44,6 +46,7 @@ export default function Dashboard() {
       const data = await api.getPolls();
       setPolls(data);
     } catch (error) {
+      console.log(error)
       setError('Failed to load polls');
     }
   };
@@ -68,6 +71,7 @@ export default function Dashboard() {
       setError('');
       loadPolls();
     } catch (error) {
+      console.log(error)
       setError('Failed to create poll');
     }
   };
@@ -78,6 +82,7 @@ export default function Dashboard() {
       await api.deletePoll(id);
       loadPolls();
     } catch (error) {
+      console.log(error)
       setError('Failed to delete poll');
     }
   };
@@ -90,6 +95,7 @@ export default function Dashboard() {
       });
       loadPolls();
     } catch (error) {
+      console.log(error)
       setError('Failed to update poll');
     }
   };

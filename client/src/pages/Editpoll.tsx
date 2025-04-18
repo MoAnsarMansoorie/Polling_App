@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Poll } from '../types/poll';
@@ -14,7 +14,11 @@ export default function EditPoll({ poll, onUpdate }: EditPollProps) {
   const [open, setOpen] = useState(false);
 
   const handleSubmit = () => {
-    onUpdate(editedPoll);
+    onUpdate({
+      ...editedPoll,
+      totalVotes: poll.totalVotes,
+      createdAt: poll.createdAt
+    });
     setOpen(false);
   };
 

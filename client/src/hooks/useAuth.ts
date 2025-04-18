@@ -11,15 +11,11 @@ export const useAuth = () => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
       const response = await api.login({ email, password });
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
       return response;
-    } catch (error) {
-      throw error;
-    }
   };
 
   const logout = () => {

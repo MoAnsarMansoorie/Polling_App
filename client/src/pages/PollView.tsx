@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import styled from 'styled-components';
+
+interface VoteBarProps {
+  $width: number;
+}
+
+const VoteBar = styled.div<VoteBarProps>`
+  width: ${props => props.$width}%;
+  background-color: #3b82f6;
+  height: 0.625rem;
+  border-radius: 9999px;
+`;
 
 interface Poll {
   _id: string;
@@ -31,6 +43,7 @@ const PollView = () => {
         const votedPolls = JSON.parse(localStorage.getItem('votedPolls') || '[]');
         setHasVoted(votedPolls.includes(id));
       } catch (err) {
+        console.log(err)
         setError('Failed to load poll');
       }
     };
@@ -57,6 +70,7 @@ const PollView = () => {
       setHasVoted(true);
       setError('');
     } catch (err) {
+      console.log(err)
       setError('Failed to submit vote');
     }
   };
@@ -157,12 +171,7 @@ const PollView = () => {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{
-                        width: `${(option.votes / poll.totalVotes) * 100}%`,
-                      }}
-                    />
+                    <VoteBar $width={(option.votes / poll.totalVotes) * 100} />
                   </div>
                 </div>
               ))}
